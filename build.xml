@@ -1,0 +1,91 @@
+
+<project name="Teneo" default="dist" basedir=".">
+	
+  <!-- set global properties for this build -->
+  <property name="src" location="src/main/java"/>
+  <property name="build" location="build"/>
+  <property name="dist" location="dist"/>
+  <property name="lib" location="lib"/>
+  <property name="test" location="src/test/java"/>
+  <property name="test.report" location="test-report"/>	
+  <property file="${basedir}/build.properties"/>	
+  <property name="main-class"  value="org.spiegler.index.CCIndexer"/>
+
+  <!-- TARGET: INIT -->
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+  </target>
+	
+  <!-- TARGET: COMPILE -->
+  <target name="compile" depends="init" description="compile the source " >
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javac srcdir="${src}" destdir="${build}" includeantruntime="false" debug="on">
+      <classpath>
+	  <fileset dir="${lib}" includes="*.jar"/>   		
+      </classpath>
+    </javac>
+  </target>
+
+  <!-- TARGET: DIST -->
+  <target name="dist" depends="compile" description="generate the distribution" >
+    <!-- Create the distribution directory -->
+    <mkdir dir="${dist}/lib"/>
+  	<jar destfile="${dist}/lib/Teneo-${DSTAMP}.jar">
+  		<fileset dir="${build}" />
+		  	<zipfileset includes="**/*.class" src="${lib}/aws-java-sdk-1.3.20.jar"/>
+		 	<zipfileset includes="**/*.class" src="${lib}/commoncrawl-1.0.jar"/>
+		  	<zipfileset includes="**/*.class" src="${lib}/guava-13.0.1.jar"/>
+		 	<zipfileset includes="**/*.class" src="${lib}/hadoop-core-1.0.3.jar"/>
+  			<zipfileset includes="**/*.class" src="${lib}/junit-4.10.jar"/>
+			<zipfileset includes="**/*.class" src="${lib}/commons-logging-1.1.1.jar"/>
+		        <zipfileset includes="**/*.class" src="${lib}/commons-io-2.4.jar"/>
+		        <zipfileset includes="**/*.class" src="${lib}/commons-cli-1.2.jar"/>
+			<zipfileset includes="**/*.class" src="${lib}/jets3t-0.8.1.jar"/>
+  		<manifest>
+        <attribute name="Main-Class" value="${main-class}"/>
+        <attribute name="Class-Path" value="${build}"/>
+    	</manifest>
+    </jar>
+  </target>
+
+  <!-- TARGET: TEST-->
+  <target name="test" depends="compile">
+    <mkdir dir="${test.report}/xml"/>
+    <mkdir dir="${test.report}/html"/>
+
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javac srcdir="${test}" destdir="${build}" includeantruntime="false" debug="on">
+      <classpath>
+        <fileset dir="${lib}" includes="*.jar"/>   		
+      </classpath>
+    </javac>
+
+    <!-- copy resources -->
+    <copy todir="build">
+      <fileset dir="${src}"
+          includes="**/*.xml,**/*.properties,**/*.txt,**/*.ico" />
+      <fileset dir="${test}"
+          includes="**/*.xml,**/*.properties,**/*.txt,**/*.ico" />
+    </copy>
+        
+  </target>
+
+    <!-- copy resources -->
+    <copy todir="build">
+      <fileset dir="${src}"
+          includes="**/*.xml,**/*.properties,**/*.txt,**/*.ico" />
+    </copy>
+        
+
+  <!-- TARGET: CLEAN -->	
+  <target name="clean" description="clean up" >
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+    <delete dir="${test.report}"/>
+  </target>
+	
+</project>
