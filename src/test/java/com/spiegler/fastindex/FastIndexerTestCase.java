@@ -33,7 +33,7 @@ public class FastIndexerTestCase {
 		JobConf conf = new JobConf();
 		mapDriver.withConfiguration(conf)
 		.withInput(new Text(), item1)
-		.withOutput(new Text("com\tgoogle.com\ttext/html\tutf-8\tfile1\t3\t1"), NullWritable.get())
+		.withOutput(new Text("com\tgoogle.com\ttext/html\tutf-8\tfile1\t3"), NullWritable.get())
 		.runTest();
 	}
 	

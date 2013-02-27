@@ -20,7 +20,7 @@ import com.spiegler.util.IndexUtil;
  */
 public class FastIndexMapper extends MapReduceBase implements Mapper<Text, ArcFileItem, Text, NullWritable>{
 	
-	private static final String FORMAT = "%s\t%s\t%s\t%s\t%s\t%d\t%d";
+	private static final String FORMAT = "%s\t%s\t%s\t%s\t%s\t%d";
 	
 	@Override
 	public void map(Text key, ArcFileItem value, OutputCollector<Text, NullWritable> output, Reporter reporter) throws IOException {
@@ -33,7 +33,7 @@ public class FastIndexMapper extends MapReduceBase implements Mapper<Text, ArcFi
 			String charset 	= IndexUtil.extractCharset(value.getHeaderItems());
 			Long byteSize 	= IndexUtil.byteSize(value, charset);
 			
-			String k = String.format(FORMAT, psuffix, domain, mtype, charset, fname, byteSize, 1);
+			String k = String.format(FORMAT, psuffix, domain, mtype, charset, fname, byteSize);
 			output.collect(new Text(k), NullWritable.get());
 			
 			reporter.incrCounter("FastIndexMapper", "files", 1);
