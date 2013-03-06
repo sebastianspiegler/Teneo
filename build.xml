@@ -9,7 +9,7 @@
   <property name="test" location="src/test/java"/>
   <property name="test.report" location="test-report"/>	
   <property file="${basedir}/build.properties"/>	
-  <property name="main-class"  value="org.spiegler.index.CCIndexer"/>
+  <!--<property name="main-class"  value="com.spiegler.index.CCIndexer"/>-->
 
   <!-- TARGET: INIT -->
   <target name="init">
@@ -45,7 +45,7 @@
 		        <zipfileset includes="**/*.class" src="${lib}/commons-cli-1.2.jar"/>
 			<zipfileset includes="**/*.class" src="${lib}/jets3t-0.8.1.jar"/>
   		<manifest>
-        <attribute name="Main-Class" value="${main-class}"/>
+        <!-- <attribute name="Main-Class" value="${main-class}"/> -->
         <attribute name="Class-Path" value="${build}"/>
     	</manifest>
     </jar>

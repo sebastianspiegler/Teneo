@@ -55,7 +55,7 @@ public class CCIndexer extends Configured implements Tool {
 		GenericOptionsParser gop = new GenericOptionsParser(conf, args);
 		String[] remainingArgs = gop.getRemainingArgs();
 
-		if (remainingArgs.length != MINARGS) {
+		if (remainingArgs.length < MINARGS) {
 			String message = "Wrong number of arguments. "
 					+ "Provide accessKey, secretKey, s3 path file, output path.";
 			LOG.error(message);
@@ -70,6 +70,9 @@ public class CCIndexer extends Configured implements Tool {
 		LOG.info("AWS secret     : " + secretKey);
 		LOG.info("Input file     : " + s3file);
 		LOG.info("Output path    : " + outputPath);
+		
+		// Increase job conf limit for storing a larger number of paths (200Mb)
+		conf.setLong("mapred.user.jobconf.limit", 209715200l);
 
 		// input/output
 		conf.setInputFormat(ARCFileItemInputFormat.class);

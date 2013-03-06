@@ -10,10 +10,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -24,8 +27,6 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
-import com.spiegler.index.util.CCIndexKey;
-import com.spiegler.index.util.CCIndexValue;
 
 public class FastIndexer extends Configured implements Tool {
 
@@ -55,7 +56,7 @@ public class FastIndexer extends Configured implements Tool {
 		GenericOptionsParser gop = new GenericOptionsParser(conf, args);
 		String[] remainingArgs = gop.getRemainingArgs();
 
-		if (remainingArgs.length != MINARGS) {
+		if (remainingArgs.length < MINARGS) {
 			String message = "Wrong number of arguments. "
 					+ "Provide accessKey, secretKey, s3 path file, output path.";
 			LOG.error(message);
@@ -70,6 +71,9 @@ public class FastIndexer extends Configured implements Tool {
 		LOG.info("AWS secret     : " + secretKey);
 		LOG.info("Input file     : " + s3file);
 		LOG.info("Output path    : " + outputPath);
+		
+		// Increase job conf limit for storing a larger number of paths (200Mb)
+		conf.setLong("mapred.user.jobconf.limit", 209715200l);
 
 		// input/output
 		conf.setInputFormat(ARCFileItemInputFormat.class);
@@ -78,16 +82,16 @@ public class FastIndexer extends Configured implements Tool {
 		FileOutputFormat.setCompressOutput(conf, false);
 
 		// mapper output key/value classes
-		conf.setMapOutputKeyClass(CCIndexKey.class);
-		conf.setMapOutputValueClass(CCIndexValue.class);
+		conf.setMapOutputKeyClass(Text.class);
+		conf.setMapOutputValueClass(NullWritable.class);
 
 		// output key/value classes
-		conf.setOutputKeyClass(CCIndexKey.class);
-		conf.setOutputValueClass(CCIndexValue.class);
+		conf.setOutputKeyClass(Text.class);
+		conf.setOutputValueClass(NullWritable.class);
 
 		// set mapper, no reducer
 		conf.setMapperClass(FastIndexMapper.class);
-		conf.setNumReduceTasks(0);
+		conf.setReducerClass(IdentityReducer.class);
 		
 		// run job
 		JobClient.runJob(conf);
