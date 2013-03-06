@@ -1,11 +1,13 @@
 package com.spiegler.fastindex;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configured;
@@ -77,7 +79,7 @@ public class FastIndexer extends Configured implements Tool {
 
 		// input/output
 		conf.setInputFormat(ARCFileItemInputFormat.class);
-		this.setInputPath(conf, accessKey, secretKey, s3file);
+		this.setInputPathFromLocal(conf, accessKey, secretKey, s3file);
 		FileOutputFormat.setOutputPath(conf, new Path(outputPath));
 		FileOutputFormat.setCompressOutput(conf, false);
 
@@ -98,8 +100,50 @@ public class FastIndexer extends Configured implements Tool {
 
 		return EXIT_CODE_NORMAL;
 	}
+	
+	/**
+	 * Set input paths using local file
+	 * @param conf
+	 * @param accessKey
+	 * @param secretKey
+	 * @param inFile
+	 * @throws IOException
+	 * @throws URISyntaxException
+	 */
+	private void setInputPathFromLocal(JobConf conf, String accessKey, String secretKey, String inFile){
 
-	private void setInputPath(JobConf conf, String accessKey, String secretKey,
+		// get content of s3 object, add paths to file input format
+		BufferedReader reader = null;
+		String arcFile, arcPath;
+		try {
+			reader = new BufferedReader(new FileReader(inFile));
+			while (true) {
+				arcFile = reader.readLine();
+				if (arcFile == null) {
+					break;
+				}
+				arcFile = PREFIX + arcFile;
+				arcPath = String.format("s3://%s:%s@%s/%s", accessKey,
+						secretKey, BUCKET, arcFile);
+				FileInputFormat.addInputPath(conf, new Path(arcPath));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			IOUtils.closeQuietly(reader);
+		}
+	}
+
+	/**
+	 * Set input paths using file in S3
+	 * @param conf
+	 * @param accessKey
+	 * @param secretKey
+	 * @param s3file
+	 * @throws IOException
+	 * @throws URISyntaxException
+	 */
+	private void setInputPathFromS3(JobConf conf, String accessKey, String secretKey,
 			String s3file) throws IOException, URISyntaxException {
 
 		// get bucket/file from s3file
@@ -134,7 +178,7 @@ public class FastIndexer extends Configured implements Tool {
 			e.printStackTrace();
 		} finally {
 			if (reader != null) {
-				reader.close();
+				IOUtils.closeQuietly(reader);
 			}
 		}
 	}
