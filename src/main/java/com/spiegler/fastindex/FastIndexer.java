@@ -102,7 +102,7 @@ public class FastIndexer extends Configured implements Tool {
 	}
 	
 	/**
-	 * Set input paths using local file
+	 * Set input paths using local file, bootstrap large files onto EC2 instance
 	 * @param conf
 	 * @param accessKey
 	 * @param secretKey
@@ -110,9 +110,8 @@ public class FastIndexer extends Configured implements Tool {
 	 * @throws IOException
 	 * @throws URISyntaxException
 	 */
-	private void setInputPathFromLocal(JobConf conf, String accessKey, String secretKey, String inFile){
+	void setInputPathFromLocal(JobConf conf, String accessKey, String secretKey, String inFile){
 
-		// get content of s3 object, add paths to file input format
 		BufferedReader reader = null;
 		String arcFile, arcPath;
 		try {
@@ -135,7 +134,7 @@ public class FastIndexer extends Configured implements Tool {
 	}
 
 	/**
-	 * Set input paths using file in S3
+	 * Set input paths using file in S3, only for small files
 	 * @param conf
 	 * @param accessKey
 	 * @param secretKey
@@ -143,7 +142,7 @@ public class FastIndexer extends Configured implements Tool {
 	 * @throws IOException
 	 * @throws URISyntaxException
 	 */
-	private void setInputPathFromS3(JobConf conf, String accessKey, String secretKey,
+	void setInputPathFromS3(JobConf conf, String accessKey, String secretKey,
 			String s3file) throws IOException, URISyntaxException {
 
 		// get bucket/file from s3file
