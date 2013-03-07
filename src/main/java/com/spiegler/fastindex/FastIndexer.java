@@ -3,8 +3,6 @@ package com.spiegler.fastindex;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.apache.commons.io.IOUtils;
@@ -23,12 +21,6 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.commoncrawl.hadoop.io.mapred.ARCFileItemInputFormat;
-
-
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
 
 public class FastIndexer extends Configured implements Tool {
 
@@ -79,7 +71,8 @@ public class FastIndexer extends Configured implements Tool {
 
 		// input/output
 		conf.setInputFormat(ARCFileItemInputFormat.class);
-		this.setInputPathFromLocal(conf, accessKey, secretKey, s3file);
+		String inputPaths = getPathsFromLocalFile(accessKey, secretKey, s3file);
+		FileInputFormat.setInputPaths(conf, inputPaths);
 		FileOutputFormat.setOutputPath(conf, new Path(outputPath));
 		FileOutputFormat.setCompressOutput(conf, false);
 
@@ -103,17 +96,18 @@ public class FastIndexer extends Configured implements Tool {
 	
 	/**
 	 * Set input paths using local file, bootstrap large files onto EC2 instance
-	 * @param conf
 	 * @param accessKey
 	 * @param secretKey
 	 * @param inFile
 	 * @throws IOException
 	 * @throws URISyntaxException
 	 */
-	void setInputPathFromLocal(JobConf conf, String accessKey, String secretKey, String inFile){
+	static String getPathsFromLocalFile(String accessKey, String secretKey, String inFile){
 
 		BufferedReader reader = null;
 		String arcFile, arcPath;
+		
+		StringBuilder sb = new StringBuilder();
 		try {
 			reader = new BufferedReader(new FileReader(inFile));
 			while (true) {
@@ -124,61 +118,14 @@ public class FastIndexer extends Configured implements Tool {
 				arcFile = PREFIX + arcFile;
 				arcPath = String.format("s3://%s:%s@%s/%s", accessKey,
 						secretKey, BUCKET, arcFile);
-				FileInputFormat.addInputPath(conf, new Path(arcPath));
+				sb.append(arcPath);
+				sb.append(",");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
 			IOUtils.closeQuietly(reader);
 		}
-	}
-
-	/**
-	 * Set input paths using file in S3, only for small files
-	 * @param conf
-	 * @param accessKey
-	 * @param secretKey
-	 * @param s3file
-	 * @throws IOException
-	 * @throws URISyntaxException
-	 */
-	void setInputPathFromS3(JobConf conf, String accessKey, String secretKey,
-			String s3file) throws IOException, URISyntaxException {
-
-		// get bucket/file from s3file
-		URI url = new URI(s3file);
-		String bucket = url.getHost();
-		String file = url.getPath().substring(1);
-
-		// get s3 object
-		BasicAWSCredentials credentials = new BasicAWSCredentials(accessKey,
-				secretKey);
-		AmazonS3Client s3Client = new AmazonS3Client(credentials);
-		S3Object object = s3Client
-				.getObject(new GetObjectRequest(bucket, file));
-
-		// get content of s3 object, add paths to file input format
-		BufferedReader reader = null;
-		String arcFile, arcPath;
-		try {
-			reader = new BufferedReader(new InputStreamReader(
-					object.getObjectContent()));
-			while (true) {
-				arcFile = reader.readLine();
-				if (arcFile == null) {
-					break;
-				}
-				arcFile = PREFIX + arcFile;
-				arcPath = String.format("s3://%s:%s@%s/%s", accessKey,
-						secretKey, BUCKET, arcFile);
-				FileInputFormat.addInputPath(conf, new Path(arcPath));
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (reader != null) {
-				IOUtils.closeQuietly(reader);
-			}
-		}
+		return sb.substring(0, sb.length()-1);
 	}
 }
