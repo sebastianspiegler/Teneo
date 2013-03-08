@@ -12,12 +12,12 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.apache.hadoop.util.GenericOptionsParser;
+import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.commoncrawl.hadoop.io.mapred.ARCFileItemInputFormat;
@@ -25,6 +25,7 @@ import org.commoncrawl.hadoop.io.mapred.ARCFileItemInputFormat;
 public class FastIndexer extends Configured implements Tool {
 
 	private static Log LOG = LogFactory.getLog(FastIndexer.class);
+	
 	private static final int EXIT_CODE_ABNORMAL = -1;
 	private static final int EXIT_CODE_NORMAL = 1;
 	private static final int MINARGS = 4;
@@ -66,13 +67,12 @@ public class FastIndexer extends Configured implements Tool {
 		LOG.info("Input file     : " + s3file);
 		LOG.info("Output path    : " + outputPath);
 		
-		// Increase job conf limit for storing a larger number of paths (200Mb)
-		conf.setLong("mapred.user.jobconf.limit", 209715200l);
+		// Increase job conf limit for storing a larger number of paths (1Gb)
+		conf.setLong("mapred.user.jobconf.limit", 1073741824l);
 
 		// input/output
 		conf.setInputFormat(ARCFileItemInputFormat.class);
-		String inputPaths = getPathsFromLocalFile(accessKey, secretKey, s3file);
-		FileInputFormat.setInputPaths(conf, inputPaths);
+		conf.set("mapred.input.dir", getPathsFromLocalFile(accessKey, secretKey, s3file));
 		FileOutputFormat.setOutputPath(conf, new Path(outputPath));
 		FileOutputFormat.setCompressOutput(conf, false);
 
@@ -107,7 +107,9 @@ public class FastIndexer extends Configured implements Tool {
 		BufferedReader reader = null;
 		String arcFile, arcPath;
 		
-		StringBuilder sb = new StringBuilder();
+		StringBuffer sb = new StringBuffer();
+		boolean first = true;
+		int count = 0;
 		try {
 			reader = new BufferedReader(new FileReader(inFile));
 			while (true) {
@@ -118,14 +120,25 @@ public class FastIndexer extends Configured implements Tool {
 				arcFile = PREFIX + arcFile;
 				arcPath = String.format("s3://%s:%s@%s/%s", accessKey,
 						secretKey, BUCKET, arcFile);
+				
+				if(first){
+					first = false;
+				}
+				else{
+					sb.append(StringUtils.COMMA);
+				}
 				sb.append(arcPath);
-				sb.append(",");
+				count++;
+				
+				if (count % 1000 == 0){
+					LOG.info("Added " + count + " files to StringBuffer");
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
 			IOUtils.closeQuietly(reader);
 		}
-		return sb.substring(0, sb.length()-1);
+		return sb.toString();
 	}
 }
