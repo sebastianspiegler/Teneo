@@ -67,8 +67,8 @@ public class FastIndexer extends Configured implements Tool {
 		LOG.info("Input file     : " + s3file);
 		LOG.info("Output path    : " + outputPath);
 		
-		// Increase job conf limit for storing a larger number of paths (1Gb)
-		conf.setLong("mapred.user.jobconf.limit", 1073741824l);
+		// Increase job conf limit for storing a larger number of paths (100Mb)
+		conf.setLong("mapred.user.jobconf.limit", 104857600l);
 
 		// input/output
 		conf.setInputFormat(ARCFileItemInputFormat.class);
