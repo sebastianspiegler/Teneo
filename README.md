@@ -1,7 +1,9 @@
 # Statistics of the Common Crawl Corpus 2012
 
 Link to [Common Crawl Foundation](http://commoncrawl.org/)
+
 Link to [Actual paper](https://docs.google.com/file/d/1_9698uglerxB9nAglvaHkEgU-iZNm1TvVGuCW7245-WGvZq47teNpb_uL5N9/edit)
+
 Raw index on AWS S3: ```s3://aws-publicdatasets/common-crawl/index201'''
 
 ## MapReduce code
